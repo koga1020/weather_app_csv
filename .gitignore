@@ -22,3 +22,5 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 weather_app-*.tar
 
+# ignore IDE extension
+.elixir_ls
