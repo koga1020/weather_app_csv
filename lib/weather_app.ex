@@ -1,20 +1,30 @@
 defmodule WeatherApp do
-  def xml() do
-    xml_map = File.read!("eqvol.xml") |> XmlToMap.naive_map()
+  @csv_headers ["updated", "title", "author", "content"]
 
-    body =
-      xml_map["feed"]["#content"]["entry"]
-      |> sort_by_updated()
-      |> Enum.reduce(
-        "",
-        &(&2 <>
-            "#{&1["updated"] |> String.replace("2020-07-201", "")}," <>
-            "#{&1["title"]}," <>
-            "#{&1["author"]["name"]}," <>
-            "#{&1["content"]["#content"] |> String.slice(0..10)}\n")
-      )
+  @doc """
+  convert xml to csv.
+  """
+  def xml2csv(xml_path, output \\ "eqvol.csv") do
+    csv_file = File.open!(output, [:write, :utf8])
 
-    File.write!("eqvol.csv", body)
+    xml_path
+    |> File.read!()
+    |> XmlToMap.naive_map()
+    # nestしたkeyを一気に取得
+    |> get_in(["feed", "#content", "entry"])
+    |> sort_by_updated()
+    |> Enum.map(fn entry ->
+      %{
+        "updated" => entry["updated"],
+        "title" => entry["title"],
+        "author" => entry["author"]["name"],
+        "content" => entry["content"]["#content"]
+      }
+    end)
+    # mapのlistをcsv形式のstringのリストに変換
+    |> CSV.encode(headers: @csv_headers)
+    # 行単位でファイル書き込み
+    |> Enum.each(&IO.write(csv_file, &1))
   end
 
   @doc """
