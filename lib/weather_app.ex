@@ -4,7 +4,7 @@ defmodule WeatherApp do
 
     body =
       xml_map["feed"]["#content"]["entry"]
-      |> Enum.sort(&(&1["updated"] < &2["updated"]))
+      |> sort_by_updated()
       |> Enum.reduce(
         "",
         &(&2 <>
@@ -15,6 +15,20 @@ defmodule WeatherApp do
       )
 
     File.write!("eqvol.csv", body)
+  end
+
+  @doc """
+  sort entries by updated field.
+  """
+  def sort_by_updated(entries, order \\ :asc) do
+    entries
+    |> Enum.sort_by(
+      fn %{"updated" => updated} ->
+        {:ok, updated_datetime, 0} = DateTime.from_iso8601(updated)
+        updated_datetime
+      end,
+      {order, DateTime}
+    )
   end
 
   def csv_headers() do
